@@ -1,234 +1,312 @@
+import io
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats as stats
 import streamlit as st
+from gtts import gTTS
 
 # Cấu hình trang Web App
 st.set_page_config(
-    page_title="SmartPortfolio AI - XSTK & QTKD", page_icon="📊", layout="wide"
+    page_title="SmartPortfolio AI",
+    page_icon="🤖",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-# Tiêu đề ứng dụng
-st.title("📊 SmartPortfolio AI: Ứng Dụng Xác Suất Thống Kê Trong QTKD")
-st.caption(
-    "Hệ thống Tối ưu hóa Danh mục Đầu tư & Thư viện Trực quan hóa Khái niệm XSTK"
+# Custom CSS cho Hiệu ứng Banner & Card
+st.markdown(
+    """
+<style>
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+.banner {
+    animation: pulse 3s infinite ease-in-out;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    padding: 25px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.user-card {
+    background-color: #f0f2f6;
+    padding: 15px 22px;
+    border-radius: 10px;
+    border-left: 5px solid #2a5298;
+    margin-bottom: 20px;
+}
+</style>
+""",
+    unsafe_allow_html=True,
 )
 
-# Thanh điều hướng các Tab chức năng
-tab1, tab2, tab3, tab4 = st.tabs([
-    "📊 Bộ Tính Toán & Tối Ưu (QTKD)",
-    "📈 Biểu Đồ Phân Phối Chuẩn",
-    "🤖 Thư Viện Prompt AI (File 2)",
-    "📄 Slide & Báo Cáo Chi Tiết (File 1 & 3)",
-])
+
+# Hàm hỗ trợ phát âm giọng nói Tiếng Việt
+def play_voice(text):
+  try:
+    tts = gTTS(text=text, lang="vi")
+    fp = io.BytesIO()
+    tts.write_to_fp(fp)
+    fp.seek(0)
+    st.audio(fp, format="audio/mp3", autoplay=True)
+  except Exception as e:
+    st.warning("⚠️ Không thể phát giọng nói (Cần có kết nối Internet).")
+
+
+# Session State quản lý Đăng nhập
+if "logged_in" not in st.session_state:
+  st.session_state.logged_in = False
+if "username" not in st.session_state:
+  st.session_state.username = ""
+if "user_role" not in st.session_state:
+  st.session_state.user_role = "Sinh viên - QTKD"
 
 # ==========================================
-# TAB 1: BỘ TÍNH TOÁN & TỐI ƯU HÓA DANH MỤC
+# GIAO DIỆN ĐĂNG NHẬP (USER LOGIN)
 # ==========================================
-with tab1:
-  st.header("1. Bài Toán Tối Ưu Hóa Danh Mục Đầu Tư Liên Thị Trường")
-  st.write(
-      "Nhập các tham số thị trường để tính toán Z-score, Xác suất an toàn và"
-      " Tỷ trọng vốn tối ưu giúp tối thiểu hóa rủi ro."
+if not st.session_state.logged_in:
+  st.markdown(
+      """
+    <div class="banner">
+        <h1>🤖 SMARTPORTFOLIO AI</h1>
+        <h3>Trợ lý AI - Xác suất Thống kê & Quản trị Kinh doanh</h3>
+    </div>
+    """,
+      unsafe_allow_html=True,
+  )
+  st.write("")
+
+  col1, col2 = st.columns(2)
+  with col1:
+    st.info("""
+        ### 👋 CHÀO MỪNG BẠN ĐẾN VỚI SMARTPORTFOLIO AI!
+        
+        ✨ **Tính năng mới cập nhật:**
+        1. 🔑 **Đăng nhập tên người dùng** cá nhân hóa.
+        2. 🖼️ **Giao diện hiệu ứng chuyển động (Animation Banner)**.
+        3. 🔊 **Giao tiếp trả lời bằng Giọng nói AI (Vietnamese Voice)**.
+        4. 📌 **Các Danh mục chính tích hợp trọn bộ 3 File theo yêu cầu của Thầy**.
+        """)
+
+  with col2:
+    st.subheader("🔑 Đăng nhập Người dùng")
+    u_name = st.text_input(
+        "👤 Nhập Tên Người Dùng / Họ & Tên:", value="Nguyễn Văn A"
+    )
+    u_role = st.selectbox(
+        "🎓 Vai trò / Ngành học:",
+        [
+            "Sinh viên - QTKD",
+            "Sinh viên - Tài chính Ngân hàng",
+            "Giảng viên",
+            "Nhà nghiên cứu",
+        ],
+    )
+    u_id = st.text_input("🆔 Mã Sinh Viên / Lớp:", value="QTKD-2026")
+
+    if st.button(
+        "🚀 BẮT ĐẦU TRẢI NGHIỆM WEB APP", type="primary", use_container_width=True
+    ):
+      if u_name.strip():
+        st.session_state.logged_in = True
+        st.session_state.username = u_name.strip()
+        st.session_state.user_role = u_role
+        st.rerun()
+      else:
+        st.error("Vui lòng nhập tên người dùng để tiếp tục!")
+
+else:
+  # ==========================================
+  # KHU VỰC CHÍNH KHI ĐÃ ĐĂNG NHẬP
+  # ==========================================
+  st.sidebar.markdown(f"### 👤 Xin chào, **{st.session_state.username}**!")
+  st.sidebar.caption(f"🎓 {st.session_state.user_role}")
+  if st.sidebar.button("🚪 Đăng xuất"):
+    st.session_state.logged_in = False
+    st.session_state.username = ""
+    st.rerun()
+
+  st.sidebar.markdown("---")
+  st.sidebar.header("📌 CÁC DANH MỤC CHÍNH")
+  nav = st.sidebar.radio(
+      "Chọn danh mục trải nghiệm:",
+      [
+          "🏠 Trang chủ & Thống kê",
+          "📘 Sản phẩm 1: AI & Khái niệm XSTK",
+          "📊 Sản phẩm 2: QTKD & Tối ưu Danh mục Đầu tư",
+          "🤖 Thư viện Prompt AI (File 2)",
+          "📄 Slide & Báo cáo Chi tiết (File 1 & 3)",
+      ],
   )
 
-  col_in1, col_in2 = st.columns(2)
-  with col_in1:
-    st.subheader("🔹 Thị trường A")
-    er_a = st.number_input("Lợi nhuận kỳ vọng E(R_A) (%)", value=19.0, step=0.5)
-    std_a = st.number_input(
-        "Độ lệch chuẩn / Rủi ro Sigma_A (%)", value=6.0, step=0.5
+  st.markdown(
+      f"""
+    <div class="user-card">
+        <h3>👋 Chào mừng <b>{st.session_state.username}</b> đến với SmartPortfolio AI!</h3>
+        <p>Hệ thống đã sẵn sàng. Hãy chọn các danh mục chính bên thanh Menu để trải nghiệm tính năng Giọng nói AI và Tối ưu hóa Thống kê.</p>
+    </div>
+    """,
+      unsafe_allow_html=True,
+  )
+
+  # 1. Trang chủ
+  if nav == "🏠 Trang chủ & Thống kê":
+    st.header("🏠 Tổng Quan Hệ Thống AI & XSTK")
+    st.write("""
+        Hệ thống **SmartPortfolio AI** tích hợp giao tiếp bằng giọng nói AI và phân tích XSTK ứng dụng trong Quản trị Kinh doanh:
+        - **Sản phẩm 1 (AI -> XSTK):** Trợ lý AI giải thích khái niệm lý thuyết và **đọc lời thoại bằng giọng nói Tiếng Việt**.
+        - **Sản phẩm 2 (AI -> QTKD):** Ứng dụng Phân phối Chuẩn & Cực trị Phương sai để tối ưu hóa danh mục đầu tư A & B.
+        """)
+
+    st.subheader("🔊 Trải nghiệm Trả lời bằng Giọng nói AI")
+    welcome_text = (
+        f"Xin chào {st.session_state.username}. Chào mừng bạn đến với ứng dụng"
+        " Smart Portfolio AI. Hôm nay chúng ta sẽ cùng nghiên cứu ứng dụng xác"
+        " suất thống kê vào quản trị kinh doanh."
+    )
+    if st.button("🎙️ Bấm để nghe AI Chào mừng & Giới thiệu"):
+      play_voice(welcome_text)
+
+  # 2. Sản phẩm 1
+  elif nav == "📘 Sản phẩm 1: AI & Khái niệm XSTK":
+    st.header("📘 Sản Phẩm 1: AI Trợ Giúp Học Khái Niệm XSTK")
+    st.caption(
+        "Khái niệm trọng tâm: Biến Ngẫu Nhiên, Kỳ vọng, Phương sai & Phân phối"
+        " Chuẩn"
     )
 
-  with col_in2:
-    st.subheader("🔹 Thị trường B")
-    er_b = st.number_input("Lợi nhuận kỳ vọng E(R_B) (%)", value=22.0, step=0.5)
-    std_b = st.number_input(
-        "Độ lệch chuẩn / Rủi ro Sigma_B (%)", value=10.0, step=0.5
+    concept = st.selectbox(
+        "Chọn khái niệm muốn học:",
+        [
+            "1. Biến ngẫu nhiên & Phân loại",
+            "2. Kỳ vọng E(X) - Điểm cân bằng",
+            "3. Phương sai Var(X) - Thước đo rủi ro",
+            "4. Phân phối Chuẩn N(mu, sigma^2) & Z-score",
+        ],
     )
 
-  st.markdown("---")
-  col_m1, col_m2 = st.columns(2)
-  with col_m1:
+    if "1. Biến" in concept:
+      msg = (
+          "Biến ngẫu nhiên là quy tắc gán mỗi kết quả của phép thử với một giá"
+          " trị số. Gồm biến rời rạc đếm được và biến liên tục."
+      )
+      st.info(msg)
+      if st.button("🔊 Nghe AI giải thích Biến ngẫu nhiên"):
+        play_voice(msg)
+    elif "2. Kỳ vọng" in concept:
+      msg = (
+          "Kỳ vọng E(X) đại diện cho giá trị trung bình dài hạn mà biến ngẫu"
+          " nhiên đạt được. Trong kinh doanh, đó là lợi nhuận bình quân dự kiến."
+      )
+      st.success(msg)
+      if st.button("🔊 Nghe AI giải thích Kỳ vọng E(X)"):
+        play_voice(msg)
+    elif "3. Phương sai" in concept:
+      msg = (
+          "Phương sai Var(X) đo lường độ phân tán quanh kỳ vọng. Trong tài"
+          " chính, phương sai đại diện cho biên độ biến động và rủi ro."
+      )
+      st.warning(msg)
+      if st.button("🔊 Nghe AI giải thích Phương sai & Rủi ro"):
+        play_voice(msg)
+    else:
+      msg = (
+          "Phân phối chuẩn có đồ thị dạng đường cong hình chuông đối xứng qua"
+          " mu. Quy tắc Z-score giúp chuẩn hóa về phân phối chuẩn tắc N(0,1)."
+      )
+      st.error(msg)
+      if st.button("🔊 Nghe AI giải thích Phân phối Chuẩn & Z-score"):
+        play_voice(msg)
+
+  # 3. Sản phẩm 2
+  elif nav == "📊 Sản phẩm 2: QTKD & Tối ưu Danh mục Đầu tư":
+    st.header("📊 Sản Phẩm 2: Tối Ưu Hóa Danh Mục Đầu Tư Liên Thị Trường")
+
+    c1, c2 = st.columns(2)
+    with c1:
+      st.subheader("🔹 Thị trường A")
+      er_a = st.number_input(
+          "Lợi nhuận kỳ vọng E(R_A) (%)", value=19.0, step=0.5
+      )
+      std_a = st.number_input(
+          "Độ lệch chuẩn / Rủi ro Sigma_A (%)", value=6.0, step=0.5
+      )
+    with c2:
+      st.subheader("🔹 Thị trường B")
+      er_b = st.number_input(
+          "Lợi nhuận kỳ vọng E(R_B) (%)", value=22.0, step=0.5
+      )
+      std_b = st.number_input(
+          "Độ lệch chuẩn / Rủi ro Sigma_B (%)", value=10.0, step=0.5
+      )
+
     r_target = st.number_input(
-        "🎯 Mức lợi nhuận mục tiêu tối thiểu (%)", value=10.0, step=0.5
-    )
-  with col_m2:
-    rho_ab = st.slider(
-        "🔗 Hệ số tương quan giữa 2 thị trường (Rho_AB)",
-        min_value=-1.0,
-        max_value=1.0,
-        value=0.0,
-        step=0.1,
+        "🎯 Mức lợi nhuận an toàn mục tiêu (%):", value=10.0, step=0.5
     )
 
-  # Tính toán Thống kê cho từng thị trường đơn lẻ
-  z_a = (r_target - er_a) / std_a
-  prob_a = (1 - stats.norm.cdf(z_a)) * 100
+    # Tính toán
+    z_a = (r_target - er_a) / std_a
+    prob_a = (1 - stats.norm.cdf(z_a)) * 100
 
-  z_b = (r_target - er_b) / std_b
-  prob_b = (1 - stats.norm.cdf(z_b)) * 100
+    z_b = (r_target - er_b) / std_b
+    prob_b = (1 - stats.norm.cdf(z_b)) * 100
 
-  # Tính toán Tối ưu hóa Danh mục (Min Variance Portfolio)
-  var_a = std_a**2
-  var_b = std_b**2
-  cov_ab = rho_ab * std_a * std_b
+    var_a = std_a**2
+    var_b = std_b**2
+    w_a = var_b / (var_a + var_b)
+    w_b = 1 - w_a
 
-  denom = var_a + var_b - 2 * cov_ab
-  if denom != 0:
-    w_a = (var_b - cov_ab) / denom
-    w_a = max(0.0, min(1.0, w_a))
-  else:
-    w_a = 0.5
-  w_b = 1 - w_a
+    er_p = w_a * er_a + w_b * er_b
+    var_p = (w_a**2) * var_a + (w_b**2) * var_b
+    std_p = np.sqrt(var_p)
 
-  er_p = w_a * er_a + w_b * er_b
-  var_p = (w_a**2) * var_a + (w_b**2) * var_b + 2 * w_a * w_b * cov_ab
-  std_p = np.sqrt(var_p) if var_p > 0 else 0.0
+    z_p = (r_target - er_p) / std_p
+    prob_p = (1 - stats.norm.cdf(z_p)) * 100
 
-  z_p = (r_target - er_p) / std_p if std_p > 0 else 0.0
-  prob_p = (1 - stats.norm.cdf(z_p)) * 100
+    st.subheader("🏆 KẾT QUẢ TỐI ƯU HÓA DANH MỤC")
+    k1, k2, k3, k4 = st.columns(4)
+    k1.metric("Tỷ trọng Thị trường A", f"{w_a*100:.2f}%")
+    k2.metric("Lãi Kỳ vọng Danh mục", f"{er_p:.2f}%")
+    k3.metric("Rủi ro Danh mục (Sigma)", f"{std_p:.2f}%")
+    k4.metric("Xác suất An toàn (>=10%)", f"{prob_p:.2f}%")
 
-  st.subheader("🏆 KẾT QUẢ TỐI ƯU HÓA TỔNG HỢP")
-  kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-  kpi1.metric("Tỷ trọng Thị trường A", f"{w_a*100:.2f}%")
-  kpi2.metric("Lợi nhuận Kỳ vọng E(R_p)", f"{er_p:.2f}%")
-  kpi3.metric("Rủi ro Danh mục (Sigma_p)", f"{std_p:.2f}%")
-  kpi4.metric("Xác suất An toàn (>=10%)", f"{prob_p:.2f}%")
+    # Vẽ biểu đồ Phân phối chuẩn
+    fig, ax = plt.subplots(figsize=(9, 4))
+    x_axis = np.linspace(0, 35, 500)
+    ax.plot(
+        x_axis,
+        stats.norm.pdf(x_axis, er_a, std_a),
+        label=f"Thị trường A ({er_a:.0f}%, {std_a:.0f}%)",
+        color="blue",
+    )
+    ax.plot(
+        x_axis,
+        stats.norm.pdf(x_axis, er_b, std_b),
+        label=f"Thị trường B ({er_b:.0f}%, {std_b:.0f}%)",
+        color="red",
+    )
+    ax.plot(
+        x_axis,
+        stats.norm.pdf(x_axis, er_p, std_p),
+        label=f"Danh mục Tối ưu ({er_p:.2f}%, {std_p:.2f}%)",
+        color="green",
+        linewidth=2.5,
+    )
+    ax.axvline(
+        r_target, color="black", linestyle="--", label=f"Mục tiêu ({r_target}%)"
+    )
+    ax.set_title("Đường Cong Phân Phối Chuẩn & Vùng Xác Suất An Toàn")
+    ax.legend()
+    ax.grid(True, alpha=0.3)
+    st.pyplot(fig)
 
-  st.markdown("### 📋 Bảng So Sánh Chỉ Số Đối Chiếu")
-  data_table = {
-      "Chỉ tiêu Phân tích": [
-          "Lợi nhuận kỳ vọng E(R)",
-          "Độ lệch chuẩn / Rủi ro (Sigma)",
-          "Giá trị chuẩn hóa Z-score",
-          "Xác suất An toàn (>= 10%)",
-      ],
-      "Thị trường A (100% A)": [
-          f"{er_a:.2f}%",
-          f"{std_a:.2f}%",
-          f"Z_A = {z_a:.2f}",
-          f"{prob_a:.2f}%",
-      ],
-      "Thị trường B (100% B)": [
-          f"{er_b:.2f}%",
-          f"{std_b:.2f}%",
-          f"Z_B = {z_b:.2f}",
-          f"{prob_b:.2f}%",
-      ],
-      f"Danh mục Tối ưu ({w_a*100:.0f}% A + {w_b*100:.0f}% B)": [
-          f"{er_p:.2f}%",
-          f"{std_p:.2f}% (Rủi ro thấp nhất)",
-          f"Z_p = {z_p:.2f}",
-          f"{prob_p:.2f}% (An toàn nhất)",
-      ],
-  }
-  st.table(data_table)
-
-# ==========================================
-# TAB 2: BIỂU ĐỒ PHÂN PHỐI CHUẨN
-# ==========================================
-with tab2:
-  st.header("2. Trực Quan Hóa Đồ Thị Phân Phối Chuẩn N(mu, sigma^2)")
-
-  fig, ax = plt.subplots(figsize=(10, 5))
-  x = np.linspace(0, 35, 1000)
-
-  y_a = stats.norm.pdf(x, er_a, std_a)
-  y_b = stats.norm.pdf(x, er_b, std_b)
-  y_p = stats.norm.pdf(x, er_p, std_p)
-
-  ax.plot(x, y_a, label=f"Thị trường A N({er_a:.0f}, {std_a:.0f}^2)", color="blue")
-  ax.plot(x, y_b, label=f"Thị trường B N({er_b:.0f}, {std_b:.0f}^2)", color="red")
-  ax.plot(
-      x,
-      y_p,
-      label=f"Danh mục Tối ưu N({er_p:.2f}, {std_p:.2f}^2)",
-      color="green",
-      linewidth=2.5,
-  )
-
-  ax.axvline(
-      r_target,
-      color="black",
-      linestyle="--",
-      label=f"Mục tiêu an toàn ({r_target}%)",
-  )
-  ax.fill_between(
-      x,
-      y_p,
-      where=(x >= r_target),
-      color="green",
-      alpha=0.2,
-      label="Xác suất an toàn Danh mục Tối ưu",
-  )
-
-  ax.set_title(
-      "Đường Cong Phân Phối Chuẩn Lợi Nhuận & Vùng Xác Suất An Toàn", fontsize=12
-  )
-  ax.set_xlabel("Tỷ suất sinh lời (%)")
-  ax.set_ylabel("Mật độ xác suất f(R)")
-  ax.legend()
-  ax.grid(True, alpha=0.3)
-
-  st.pyplot(fig)
-
-# ==========================================
-# TAB 3: THƯ VIỆN PROMPT AI (FILE 2)
-# ==========================================
-with tab3:
-  st.header("3. Thư Viện Prompt AI (Đáp ứng yêu cầu File 2 của Thầy)")
-  st.write(
-      "Bộ các câu lệnh Prompt thực tế đã sử dụng để chỉ đạo AI phân tích và"
-      " biên soạn sản phẩm."
-  )
-
-  st.subheader("🤖 Group 1: Prompt Sản phẩm 1 (AI -> Khái niệm XSTK)")
-  st.code(
-      """
-[PROMPT 1: Dùng ẩn dụ giải thích Kỳ vọng E(X) & Phương sai Var(X)]
-Bạn là một giảng viên XSTK xuất sắc. Hãy giải thích khái niệm 'Kỳ vọng E(X)' và 'Phương sai Var(X)' cho sinh viên bằng ẩn dụ thực tế. Nêu rõ ý nghĩa phương sai trong đo lường rủi ro và cho 1 ví dụ số cụ thể.
-
-[PROMPT 2: Giải thích Phân phối Chuẩn & Code Python]
-Hãy giải thích khái niệm Phân phối chuẩn N(mu, sigma^2) và quy tắc chuẩn hóa Z-score. Viết đoạn code Python dùng matplotlib vẽ đồ thị hình chuông và tô màu vùng xác suất P(X >= a).
-""",
-      language="text",
-  )
-
-  st.subheader("🤖 Group 2: Prompt Sản phẩm 2 (AI -> Ngành QTKD)")
-  st.code(
-      """
-[PROMPT 1: Phân tích Xác suất An toàn Z-score]
-Cho Thị trường A (E=19%, std=6%) và Thị trường B (E=22%, std=10%). Dùng phân phối chuẩn N(mu, sigma^2) tính xác suất đạt lợi nhuận >= 10% của từng thị trường và rút ra nhận xét quản trị.
-
-[PROMPT 2: Tối ưu hóa Tỷ trọng Vốn Min Variance]
-Lập hàm phương sai danh mục kết hợp sigma_p^2 = w_A^2 * 36 + (1-w_A)^2 * 100. Dùng đạo hàm d(sigma_p^2)/dw_A = 0 để tìm tỷ trọng vốn w_A tối ưu giúp tối thiểu hóa rủi ro.
-
-[PROMPT 3: Viết Báo cáo Quản trị Danh mục Markowitz]
-Viết bản báo cáo hoàn chỉnh cho giảng viên tổng hợp bài học quản trị kinh doanh: Đa dạng hóa danh mục giúp triệt tiêu rủi ro phi hệ thống mà vẫn giữ mức sinh lời tối ưu.
-""",
-      language="text",
-  )
-
-# ==========================================
-# TAB 4: SLIDE & BÁO CÁO CHI TIẾT (FILE 1 & 3)
-# ==========================================
-with tab4:
-  st.header("4. Trung Tâm Tài Liệu Báo Cáo & Slide Thuyết Trình")
-
-  st.subheader("📄 Dàn Ý Slide Thuyết Trình (Đáp ứng File Slide)")
-  st.markdown("""
-    * **Slide 1:** Tiêu đề Đề tài: Ứng dụng XSTK & Phân phối chuẩn trong Quản trị Danh mục Đầu tư.
-    * **Slide 2:** Bối cảnh Kinh doanh & Dữ liệu Đầu vào (Thị trường A & B).
-    * **Slide 3:** Phân tích Xác suất An toàn Z-score ($P(R \ge 10\%)$).
-    * **Slide 4:** Mô hình Tối ưu hóa Tỷ trọng Vốn ($w_A^* = 74\%$, $w_B^* = 26\%$).
-    * **Slide 5:** Bảng So sánh Chỉ số & Kết luận Quản trị Markowitz.
-    """)
-
-  st.markdown("---")
-  st.subheader("📝 Tóm Tắt Bài Báo Cáo Quản Trị (Đáp ứng File Sản Phẩm Cụ Thể)")
-  st.info("""
-    **Kết luận Quản trị Thực tiễn:**
-    1. **Khi đầu tư đơn lẻ:** Thị trường A an toàn hơn Thị trường B (93.32% > 88.49%) do biến động nhỏ hơn (6% < 10%).
-    2. **Đa dạng hóa vốn:** Phối hợp 74% A + 26% B kéo rủi ro xuống chỉ còn **5.15%** (thấp hơn cả thị trường A), đồng thời nâng xác suất an toàn lên **97.13%**.
-    """)
+    speech_result = (
+        f"Phân bổ {w_a*100:.0f}% vốn vào thị trường A và {w_b*100:.0f}% vào thị"
+        " trường B giúp giảm rủi ro danh mục xuống mức thấp nhất là"
+        f" {std_p:.2f}%, đồng thời đạt xác suất an toàn lên tới {prob_p:.2f}%."
+    )
+    if st.button("🎙️ Nghe AI đọc báo cáo kết quả tối ưu hóa"):
+      play_voice(speech_result)
